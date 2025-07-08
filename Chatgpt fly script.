@@ -3,14 +3,16 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local ContextActionService = game:GetService("ContextActionService")
 
 -- GUI setup
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "FlyGui"
+gui.ResetOnSpawn = false
 
 local flyButton = Instance.new("TextButton")
 flyButton.Size = UDim2.new(0, 150, 0, 50)
-flyButton.Position = UDim2.new(0.5, -75, 0.9, -25)
+flyButton.Position = UDim2.new(0.5, -75, 0.85, 0)
 flyButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 flyButton.TextColor3 = Color3.new(1, 1, 1)
 flyButton.Font = Enum.Font.SourceSansBold
@@ -20,12 +22,11 @@ flyButton.Parent = gui
 
 -- Fly variables
 local flying = false
-local velocity = Vector3.zero
 local speed = 50
 local bodyVelocity
-local connection
+local moveDirection = Vector3.zero
 
--- Input tracking
+-- PC input tracking
 local keys = {
     W = false,
     A = false,
@@ -35,54 +36,3 @@ local keys = {
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if keys[input.KeyCode.Name] ~= nil then
-        keys[input.KeyCode.Name] = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-    if keys[input.KeyCode.Name] ~= nil then
-        keys[input.KeyCode.Name] = false
-    end
-end)
-
--- Fly logic
-local function startFlying()
-    if not flying then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-        bodyVelocity.Velocity = Vector3.zero
-        bodyVelocity.P = 1250
-        bodyVelocity.Parent = humanoidRootPart
-
-        connection = RunService.RenderStepped:Connect(function()
-            local moveDirection = Vector3.zero
-            if keys.W then moveDirection = moveDirection + workspace.CurrentCamera.CFrame.LookVector end
-            if keys.S then moveDirection = moveDirection - workspace.CurrentCamera.CFrame.LookVector end
-            if keys.A then moveDirection = moveDirection - workspace.CurrentCamera.CFrame.RightVector end
-            if keys.D then moveDirection = moveDirection + workspace.CurrentCamera.CFrame.RightVector end
-
-            bodyVelocity.Velocity = moveDirection.Unit * speed
-        end)
-
-        flying = true
-        flyButton.Text = "Stop Flying"
-    end
-end
-
-local function stopFlying()
-    if flying then
-        if connection then connection:Disconnect() end
-        if bodyVelocity then bodyVelocity:Destroy() end
-        flying = false
-        flyButton.Text = "Toggle Fly"
-    end
-end
-
-flyButton.MouseButton1Click:Connect(function()
-    if flying then
-        stopFlying()
-    else
-        startFlying()
-    end
-end)
